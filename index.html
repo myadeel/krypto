@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krypto - Top Cryptos for Investment</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f0f8ff;
+            color: #333;
+        }
+        header {
+            background-color: #004085;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        header img {
+            width: 50px;
+            height: 50px;
+            margin-right: 15px;
+        }
+        h1 {
+            font-size: 2rem;
+            margin: 0;
+        }
+        section {
+            padding: 20px;
+        }
+        th {
+            cursor: pointer;
+        }
+        th.sort-asc:after {
+            content: " ▲";
+        }
+        th.sort-desc:after {
+            content: " ▼";
+        }
+        .footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #004085;
+            color: white;
+            margin-top: 20px;
+            font-size: 0.9rem;
+        }
+        .gain {
+            color: green !important;
+        }
+        .loss {
+            color: red !important;
+        }
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .header-row div {
+            display: flex;
+            gap: 10px;
+        }
+        /* Enhanced Hover effect for table rows */
+        table tbody tr:hover {
+            background-color: #cce5ff; /* Brighter blue for prominence */
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Subtle shadow effect */
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <img src="./kryptologo.png" alt="Krypto Platform Logo">
+        <h1>Krypto</h1>
+    </header>
+
+    <!-- Top Cryptocurrencies for Investment Table -->
+    <section>
+        <div class="header-row">
+            <h2><i class="fas fa-table"></i> Top Cryptos for Investment</h2>
+            <div>
+                <button class="btn btn-primary" id="refresh-button" onclick="fetchCryptoData()">Refresh Data</button>
+                <a href="all.html" class="btn btn-secondary">All Currencies</a>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered" id="investment-table">
+                <thead class="table-dark">
+                    <tr>
+                        <th onclick="sortTable(0, 'investment-table')"><i class="fas fa-coins"></i> Cryptocurrency</th>
+                        <th onclick="sortTable(1, 'investment-table')"><i class="fas fa-font"></i> Symbol</th>
+                        <th onclick="sortTable(2, 'investment-table')"><i class="fas fa-dollar-sign"></i> Price (USD)</th>
+                        <th onclick="sortTable(3, 'investment-table')"><i class="fas fa-wallet"></i> Market Cap</th>
+                        <th onclick="sortTable(4, 'investment-table')"><i class="fas fa-clock"></i> 1H % Change</th>
+                        <th onclick="sortTable(5, 'investment-table')"><i class="fas fa-percentage"></i> 24H % Change</th>
+                        <th onclick="sortTable(6, 'investment-table')"><i class="fas fa-calendar-week"></i> 7D % Change</th>
+                        <th onclick="sortTable(7, 'investment-table')"><i class="fas fa-dollar-sign"></i> 7D Price Difference</th>
+                    </tr>
+                </thead>
+                <tbody id="crypto-table-body">
+                    <tr><td colspan="8">Loading data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Footer Section -->
+    <footer class="footer">
+        <p>© 2024 Krypto Portfolio. A seamless one-page crypto experience, crafted and engineered by Adeel!</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script>
+        async function fetchCryptoData() {
+            const url = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=10&page=1&sparkline=false&price_change_percentage=1h,24h,7d,90d`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                const tableBody = document.getElementById('crypto-table-body');
+                tableBody.innerHTML = ""; 
+
+                data.forEach((coin) => {
+                    const priceDiff7d = calculatePriceDifference(coin.current_price, coin.price_change_percentage_7d_in_currency);
+
+                    // Append rows for Top Cryptocurrencies Table
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${coin.name}</td>
+                        <td>${coin.symbol.toUpperCase()}</td>
+                        <td>$${coin.current_price.toLocaleString()}</td>
+                        <td>${formatMarketCap(coin.market_cap)}</td>
+                        <td class="${coin.price_change_percentage_1h_in_currency >= 0 ? 'gain' : 'loss'}">${coin.price_change_percentage_1h_in_currency ? coin.price_change_percentage_1h_in_currency.toFixed(2) + '%' : 'N/A'}</td>
+                        <td class="${coin.price_change_percentage_24h >= 0 ? 'gain' : 'loss'}">${coin.price_change_percentage_24h.toFixed(2)}%</td>
+                        <td class="${coin.price_change_percentage_7d_in_currency >= 0 ? 'gain' : 'loss'}">${coin.price_change_percentage_7d_in_currency.toFixed(2)}%</td>
+                        <td class="${priceDiff7d.class}">${priceDiff7d.value}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Error fetching crypto data:", error);
+                document.getElementById('crypto-table-body').innerHTML = "<tr><td colspan='8'>Failed to load data.</td></tr>";
+            }
+        }
+
+        function calculatePriceDifference(currentPrice, percentage7d) {
+            if (percentage7d === null || isNaN(percentage7d)) {
+                return { value: "No data", class: "" };
+            }
+            const priceDiff = (currentPrice * percentage7d) / 100;
+            return { value: `$${priceDiff.toFixed(2)}`, class: priceDiff >= 0 ? "gain" : "loss" };
+        }
+
+        function formatMarketCap(value) {
+            if (value >= 1e12) {
+                return `$${(value / 1e12).toFixed(1)}T`;
+            } else if (value >= 1e9) {
+                return `$${(value / 1e9).toFixed(1)}B`;
+            } else if (value >= 1e6) {
+                return `$${(value / 1e6).toFixed(1)}M`;
+            } else {
+                return `$${value.toLocaleString()}`;
+            }
+        }
+
+        function sortTable(columnIndex, tableId) {
+            const table = document.getElementById(tableId);
+            const rows = Array.from(table.rows).slice(1); // Exclude header row
+            const isAscending = table.getAttribute("data-sort-order") !== "asc";
+
+            rows.sort((a, b) => {
+                const cellA = a.cells[columnIndex].textContent.replace(/[$,%]/g, "").trim();
+                const cellB = b.cells[columnIndex].textContent.replace(/[$,%]/g, "").trim();
+
+                const valA = isNaN(cellA) ? cellA.toLowerCase() : parseFloat(cellA);
+                const valB = isNaN(cellB) ? cellB.toLowerCase() : parseFloat(cellB);
+
+                return isAscending ? (valA > valB ? 1 : -1) : (valA < valB ? 1 : -1);
+            });
+
+            const tbody = table.querySelector("tbody");
+            rows.forEach((row) => tbody.appendChild(row));
+
+            table.setAttribute("data-sort-order", isAscending ? "asc" : "desc");
+            const headers = table.querySelectorAll("th");
+            headers.forEach((th, i) => {
+                th.classList.remove("sort-asc", "sort-desc");
+                if (i === columnIndex) {
+                    th.classList.add(isAscending ? "sort-asc" : "sort-desc");
+                }
+            });
+        }
+
+        window.onload = fetchCryptoData;
+        setInterval(fetchCryptoData, 12 * 60 * 60 * 1000); // 12 hours in milliseconds
+    </script>
+</body>
+</html>
